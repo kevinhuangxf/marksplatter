@@ -26,8 +26,8 @@ from PIL import Image
 
 # WAM watermarking imports
 # from notebooks.inference_utils import load_model_from_checkpoint
-from watermark_anything.data.metrics import bit_accuracy_inference
-from watermark_anything.augmentation.augmenter import Augmenter
+from marksplatter.data.metrics import bit_accuracy_inference
+from marksplatter.augmentation.augmenter import Augmenter
 from einops import rearrange
 from skimage.metrics import peak_signal_noise_ratio
 from utils import init_model

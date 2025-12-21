@@ -20,10 +20,10 @@ import torch
 import torch.nn.functional as F
 from torchvision import transforms
 
-from watermark_anything.models import Wam, build_embedder, build_extractor
-from watermark_anything.augmentation.augmenter import Augmenter
-from watermark_anything.data.transforms import default_transform, normalize_img, unnormalize_img
-from watermark_anything.modules.jnd import JND
+from marksplatter.models import MarkSplatter, build_embedder, build_extractor
+from marksplatter.augmentation.augmenter import Augmenter
+from marksplatter.data.transforms import default_transform, normalize_img, unnormalize_img
+from marksplatter.modules.jnd import JND
 
 
 def msg2str(msg):
@@ -64,7 +64,7 @@ def init_model(json_path, ckpt_path=None):
         attenuation = None
     
     # Build the complete model
-    wam = Wam(embedder, extractor, augmenter, attenuation, args.scaling_w, args.scaling_i)
+    wam = MarkSplatter(embedder, extractor, augmenter, attenuation, args.scaling_w, args.scaling_i)
     
     # Load the model weights
     if ckpt_path is not None:
