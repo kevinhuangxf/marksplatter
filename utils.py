@@ -32,7 +32,7 @@ def msg2str(msg):
 def str2msg(str):
     return [True if el=='1' else False for el in str]
 
-def load_model_from_checkpoint(json_path, ckpt_path):
+def init_model(json_path, ckpt_path=None):
     """
     Load a model from a checkpoint file and a JSON file containing the parameters.
     Args:
@@ -67,13 +67,14 @@ def load_model_from_checkpoint(json_path, ckpt_path):
     wam = Wam(embedder, extractor, augmenter, attenuation, args.scaling_w, args.scaling_i)
     
     # Load the model weights
-    if os.path.exists(ckpt_path):
-        checkpoint = torch.load(ckpt_path, map_location='cpu')
-        wam.load_state_dict(checkpoint, strict=False)
-        print("Model loaded successfully from", ckpt_path)
-        print(params)
-    else:
-        print("Checkpoint path does not exist:", ckpt_path)
+    if ckpt_path is not None:
+        if os.path.exists(ckpt_path):
+            checkpoint = torch.load(ckpt_path, map_location='cpu')
+            wam.load_state_dict(checkpoint, strict=False)
+            print("Model loaded successfully from", ckpt_path)
+            print(params)
+        else:
+            print("Checkpoint path does not exist:", ckpt_path)
     
     return wam
 

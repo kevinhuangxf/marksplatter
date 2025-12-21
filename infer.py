@@ -25,11 +25,12 @@ import time
 from PIL import Image
 
 # WAM watermarking imports
-from notebooks.inference_utils import load_model_from_checkpoint
+# from notebooks.inference_utils import load_model_from_checkpoint
 from watermark_anything.data.metrics import bit_accuracy_inference
 from watermark_anything.augmentation.augmenter import Augmenter
 from einops import rearrange
 from skimage.metrics import peak_signal_noise_ratio
+from utils import init_model
 
 IMAGENET_DEFAULT_MEAN = (0.485, 0.456, 0.406)
 IMAGENET_DEFAULT_STD = (0.229, 0.224, 0.225)
@@ -78,24 +79,31 @@ pipe = pipe.to(device)
 bg_remover = rembg.new_session()
 
 # Load WAM watermarking model
-exp_dir = "/workspace/code/watermark-anything/checkpoints"
-json_path = os.path.join(exp_dir, "params_cross_att.json")
-ckpt_path = os.path.join(exp_dir, 'wam_mit.pth') 
-wam = load_model_from_checkpoint(json_path, ckpt_path).to(device)
+# exp_dir = "/workspace/code/watermark-anything/checkpoints"
+# json_path = os.path.join(exp_dir, "params_cross_att.json")
+json_path = "ckpts/params_cross_att.json"
+# ckpt_path = os.path.join(exp_dir, 'wam_mit.pth') 
+wam = init_model(json_path).to(device)
 wam.scaling_w = 0.3
 
 # Resume WAM checkpoint
-wam_ckpt = load_file("/workspace/code/LGM/workspace_debug/workspace_wam_debug_250212/model.safetensors", device='cpu')
-print('Loading WAM checkpoint...')
-wam_state_dict = wam.state_dict()
-for k, v in wam_ckpt.items():
-    if k in wam_state_dict: 
-        if wam_state_dict[k].shape == v.shape:
-            wam_state_dict[k].copy_(v)
+#wam_ckpt = load_file("/workspace/code/LGM/workspace_debug/workspace_wam_debug_250212/model.safetensors", device='cpu')
+
+if os.path.exists(opt.marksplatter_ckpt_path):
+    wam_ckpt = load_file(opt.marksplatter_ckpt_path, device='cpu')
+    print('Loading WAM checkpoint...')
+    wam_state_dict = wam.state_dict()
+    for k, v in wam_ckpt.items():
+        if k in wam_state_dict: 
+            if wam_state_dict[k].shape == v.shape:
+                wam_state_dict[k].copy_(v)
+            else:
+                print(f'[WARN] mismatching shape for param {k}: ckpt {v.shape} != model {wam_state_dict[k].shape}, ignored.')
         else:
-            print(f'[WARN] mismatching shape for param {k}: ckpt {v.shape} != model {wam_state_dict[k].shape}, ignored.')
-    else:
-        print(f'[WARN] unexpected param {k}: {v.shape}')
+            print(f'[WARN] unexpected param {k}: {v.shape}')
+else:
+    print(f'[WARN] WAM checkpoint path does not exist: {opt.marksplatter_ckpt_path}')
+    raise FileNotFoundError(f"WAM checkpoint path does not exist: {opt.marksplatter_ckpt_path}")
 
 # Generate random watermark message
 wm_msgs = torch.randint(0, 2, (1, 32))
@@ -140,56 +148,9 @@ def process(opt: Options, path):
 
     tik = time.time()
     mv_image = pipe('', image, guidance_scale=5.0, num_inference_steps=30, elevation=0)
-
-    # local image append
-    # gso_path_list = [
-    #     # f"/workspace/code/LGM/data_girl/output_000000.jpg",
-    #     # f"/workspace/code/LGM/data_girl/output_000004.jpg",
-    #     # f"/workspace/code/LGM/data_girl/output_000009.jpg",
-    #     # f"/workspace/code/LGM/data_girl/output_000014.jpg"
-    #     f"/workspace/code/LGM/data/bubble_mart_blue/mv_image_0.png",
-    #     f"/workspace/code/LGM/data/bubble_mart_blue/mv_image_1.png",
-    #     f"/workspace/code/LGM/data/bubble_mart_blue/mv_image_2.png",
-    #     f"/workspace/code/LGM/data/bubble_mart_blue/mv_image_3.png"
-    # ]
-
-    # mv_image = []
-    # for i, path in enumerate(gso_path_list):
-    #     # input_image = kiui.read_image(path, mode='uint8')
-    #     input_image = Image.open(path).convert('RGB')
-    #     input_image = np.array(input_image)
-
-    #     # bg removal
-    #     carved_image = rembg.remove(input_image, session=bg_remover) # [H, W, 4]
-    #     mask = carved_image[..., -1] > 0
-
-    #     # recenter
-    #     image = recenter(carved_image, mask, border_ratio=0.2)
-        
-    #     # generate mv
-    #     image = image.astype(np.float32) / 255.0
-
-    #     # rgba to rgb white bg
-    #     if image.shape[-1] == 4:
-    #         # Save grayscale mask using PIL
-    #         mask_img = Image.fromarray((image[..., 3:4] * 255).astype(np.uint8).squeeze(-1), mode='L')
-    #         mask_img.save(f'/workspace/code/LGM/data/images/mv_image_mask_{i}.png')
-    #         image = image[..., :3] * image[..., 3:4]  + (1 - image[..., 3:4])
-
-    #     # rgba to rgb white bg
-    #     # if image.shape[-1] == 4:
-    #     #     image = image[..., :3] * image[..., 3:4]  + image[..., 3:4]
-
-    #     mv_image.append(image)
-
     mv_image = np.stack([mv_image[1], mv_image[2], mv_image[3], mv_image[0]], axis=0) # [4, 256, 256, 3], float32
     tok = time.time()
     print(f'[INFO] MVDream took {tok - tik:.2f}s')
-
-    # save mv_image[0] to mv_image[3] into local images
-
-    for i in range(4):
-        imageio.imwrite(f'/workspace/code/LGM/data/images/mv_image_{i}.png', (mv_image[i] * 255).astype(np.uint8))
 
     # generate gaussians
     input_image = torch.from_numpy(mv_image).permute(0, 3, 1, 2).float().to(device) # [4, 3, 256, 256]
@@ -539,11 +500,11 @@ def process(opt: Options, path):
         with open(os.path.join(opt.workspace, name + '_watermark_stats.json'), 'w') as f:
             json.dump(stats, f, indent=2)
 
-
-assert opt.test_path is not None
-if os.path.isdir(opt.test_path):
-    file_paths = glob.glob(os.path.join(opt.test_path, "*"))
-else:
-    file_paths = [opt.test_path]
-for path in file_paths:
-    process(opt, path)
+if __name__ == '__main__':
+    assert opt.test_path is not None
+    if os.path.isdir(opt.test_path):
+        file_paths = glob.glob(os.path.join(opt.test_path, "*"))
+    else:
+        file_paths = [opt.test_path]
+    for path in file_paths:
+        process(opt, path)
