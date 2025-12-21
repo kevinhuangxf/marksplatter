@@ -35,7 +35,7 @@ python infer.py big \
 --resume ./ckpts/gaussianbridge.safetensors \
 --marksplatter_ckpt_path ./ckpts/marksplatter.safetensors \
 --workspace ./workspace_test \
---test_path examples/croco_doge
+--test_path examples/rabbit
 ```
 
 Run the example with LGM:
