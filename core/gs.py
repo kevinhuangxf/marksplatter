@@ -9,7 +9,7 @@ from diff_gaussian_rasterization import (
     GaussianRasterizer,
 )
 
-from modified_diff_gaussian_rasterization import GaussianRasterizer as ModifiedGaussianRasterizer
+# from modified_diff_gaussian_rasterization import GaussianRasterizer as ModifiedGaussianRasterizer
 
 from core.options import Options
 
@@ -146,7 +146,8 @@ class GaussianRenderer:
                     debug=False,
                 )
 
-                rasterizer = ModifiedGaussianRasterizer(raster_settings=raster_settings)
+                rasterizer = GaussianRasterizer(raster_settings=raster_settings)
+                # rasterizer = ModifiedGaussianRasterizer(raster_settings=raster_settings)
 
                 # Rasterize visible Gaussians to image, obtain their radii (on screen).
                 rendered_image, rendered_depth, radii, pixel_gaussian_counter = rasterizer(
