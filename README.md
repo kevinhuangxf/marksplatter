@@ -48,6 +48,19 @@ python infer.py big \
 --test_path examples/bird
 ```
 
+## Citation
+
+If you find this work useful, please cite:
+
+```bibtex
+@inproceedings{huang2025stereogs,
+      title     = {MarkSplatter: Generalizable Watermarking for 3D Gaussian Splatting Model via Splatter Image Structure},
+      author    = {Xiufeng Huang, Ziyuan Luo, Qi Song, Ruofei Wang, Renjie Wan},
+      booktitle = {ACM Multimedia},
+      year      = {2025}
+}
+```
+
 ## Acknowledgement
 
 This project is based on the [LGM](https://github.com/3DTopia/LGM/tree/main) and [Watermark-anything](https://github.com/facebookresearch/watermark-anything) repositories. If you are insterested in our work, please also consider to cite them.
