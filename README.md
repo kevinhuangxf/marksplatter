@@ -53,7 +53,7 @@ python infer.py big \
 If you find this work useful, please cite:
 
 ```bibtex
-@inproceedings{huang2025stereogs,
+@inproceedings{huang2025marksplatter,
       title     = {MarkSplatter: Generalizable Watermarking for 3D Gaussian Splatting Model via Splatter Image Structure},
       author    = {Xiufeng Huang, Ziyuan Luo, Qi Song, Ruofei Wang, Renjie Wan},
       booktitle = {ACM Multimedia},
